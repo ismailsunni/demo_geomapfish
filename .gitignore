@@ -2,11 +2,12 @@
 *.pyc
 *.pyo
 __pycache__/
+/.tx
 /project.yaml
 /docker-compose.yaml
 /docker-compose-build.yaml
-/alembic.ini
 /alembic.yaml
+/testdb/README
 /testdb/11-schemas.sql
 /testdb/12-alembic.sql
 /testdb/13-alembic-static.sql
@@ -16,6 +17,9 @@ __pycache__/
 /mapserver/demo.map
 /mapserver/tinyows.xml
 /mapserver/replace_db.sh
+/mapserver/edit.map
+/mapserver/osm.map
+/mapserver/private.map
 /geoportal/jsbuild/app.cfg
 /geoportal/Dockerfile
 /geoportal/development.ini
@@ -29,6 +33,4 @@ __pycache__/
 /geoportal/demo_geoportal/static-ngeo/fonts/gmf-icons.*
 /geoportal/demo_geoportal/static-ngeo/fonts/fontawesome-webfont.*
 /geoportal/demo_geoportal/static/build/
-/commons/Dockerfile
-/commons/demo_commons.egg-info
 /.upgrade.yaml

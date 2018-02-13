@@ -47,6 +47,7 @@ endif
 WEB_RULE ?= $(DEFAULT_WEB_RULE)
 
 DEFAULT_BUILD_RULES ?= /build/geoportal-docker.timestamp \
+	/build/config-docker.timestamp \
 	project.yaml \
 	alembic.ini \
 	alembic.yaml \
@@ -68,12 +69,6 @@ endif
 # Make rules
 ifeq ($(TILECLOUD_CHAIN), TRUE)
 DEFAULT_BUILD_RULES += tilegeneration/config.yaml
-endif
-ifeq ($(PRINT), TRUE)
-DEFAULT_BUILD_RULES += /build/print-docker.timestamp
-endif
-ifeq ($(MAPSERVER), TRUE)
-DEFAULT_BUILD_RULES += /build/mapserver-docker.timestamp
 endif
 ifeq (${DEVELOPMENT}, TRUE)
 DEFAULT_BUILD_RULES += /build/testdb-docker.timestamp
@@ -278,8 +273,7 @@ else
 CSS_XAPI_FILES := $(DEFAULT_CSS_XAPI_FILES)
 endif
 
-VALIDATE_PY_FOLDERS = commons/$(PACKAGE)_commons admin/$(PACKAGE)_admin \
-	geoportal/$(PACKAGE)_geoportal/*.py geoportal/$(PACKAGE)_geoportal/lib \
+VALIDATE_PY_FOLDERS = geoportal/$(PACKAGE)_geoportal/*.py geoportal/$(PACKAGE)_geoportal/lib \
 	geoportal/$(PACKAGE)_geoportal/scripts geoportal/$(PACKAGE)_geoportal/views
 VALIDATE_PY_TEST_FOLDERS = geoportal/$(PACKAGE)_geoportal/tests
 
@@ -288,7 +282,7 @@ SPHINX_FILES = $(shell find doc -name "*.rst" -print)
 
 # Server localisation
 ifdef CGXP_INTERFACES
-SERVER_LOCALISATION_SOURCES_FILES += commons/$(PACKAGE)_commons/models.py $(shell find geoportal/$(PACKAGE)_geoportal/templates -type f -name '*.html')
+SERVER_LOCALISATION_SOURCES_FILES += geopoertal/$(PACKAGE)_geoportal/models.py $(shell find geoportal/$(PACKAGE)_geoportal/templates -type f -name '*.html')
 SERVER_LOCALISATION_RULES = $(addprefix /build/lang-server-, $(LANGUAGES))
 endif
 
@@ -374,7 +368,7 @@ yamllint: $(YAML_FILES)
 .PHONY: clean
 clean: template-clean
 	rm --recursive --force /build/*.timestamp \
-		apache/mapcache.xml apache/tiles.conf \
+		mapcache/mapcache.xml apache/tiles.conf \
 		mapserver/mapserver.map \
 		$(OUTPUT_DIR)/ \
 		$(APP_OUTPUT_DIR)/ \
@@ -592,7 +586,7 @@ $(APP_OUTPUT_DIR)/images/: /usr/lib/node_modules/ngeo/third-party/jquery-ui/imag
 		/opt/googleclosurecompiler-externs/angular-$(ANGULAR_VERSION)-http-promise_templated.js \
 		/opt/googleclosurecompiler-externs/jquery-1.9.js
 	$(PRERULE_CMD)
-	node /usr/lib/node_modules/ngeo/buildtools/build.js $< $@
+	node /usr/lib/node_modules/ngeo/buildtools/build.js --config=$< --output=$@
 
 $(APP_OUTPUT_DIR)/templatecache.js: /build/gmftemplatecache.js
 	$(PRERULE_CMD)
@@ -677,30 +671,22 @@ $(CSS_XAPI_OUTPUT): \
 
 /build/requirements.timestamp: /build/venv.timestamp-noclean geoportal/setup.py
 	$(PRERULE_CMD)
-	$(VENV_BIN)/pip install --editable=commons --editable=geoportal
-	touch $@
-
-# Print
-
-.PHONY: print-docker
-print-docker: /build/print-docker.timestamp
-
-/build/print-docker.timestamp: $(shell docker-required --path print)
-	$(PRERULE_CMD)
-	docker build -t $(DOCKER_BASE)-print:$(DOCKER_TAG) print
+	$(VENV_BIN)/pip install --editable=geoportal
 	touch $@
 
 # Docker
 
 docker-compose-build.yaml: /build/requirements.timestamp
 
-.PHONY: mapserver-docker
-mapserver-docker: /build/mapserver-docker.timestamp
+.PHONY: config-docker
+config-docker: /build/config-docker.timestamp
 
-/build/mapserver-docker.timestamp: $(shell docker-required --path mapserver) \
-		mapserver/mapserver.map
+/build/config-docker.timestamp: $(shell docker-required --path .) \
+		print/print-apps/$(PACKAGE)/config.yaml \
+		mapserver/mapserver.map \
+		mapcache/mapcache.xml
 	$(PRERULE_CMD)
-	docker build -t $(DOCKER_BASE)-mapserver:$(DOCKER_TAG) mapserver
+	docker build -t $(DOCKER_BASE)-config:$(DOCKER_TAG) .
 	touch $@
 
 mapserver/mapserver.map:
@@ -713,15 +699,9 @@ geoportal-docker: /build/geoportal-docker.timestamp
 /build/geoportal-docker.timestamp: $(shell docker-required --path geoportal) \
 		$(SERVER_LOCALISATION_RULES) \
 		$(WEB_RULE) \
-		geoportal/config.yaml \
-		/build/commons-docker.timestamp
+		geoportal/config.yaml
 	$(PRERULE_CMD)
-	docker build -t $(DOCKER_BASE)-geoportal:$(DOCKER_TAG) --build-arg "GIT_HASH=$(GIT_HASH)" geoportal
-	touch $@
-
-/build/commons-docker.timestamp: $(shell docker-required --path commons)
-	$(PRERULE_CMD)
-	docker build -t $(DOCKER_BASE)-commons:$(DOCKER_TAG) commons
+	docker build --tag=$(DOCKER_BASE)-geoportal:$(DOCKER_TAG) --build-arg="GIT_HASH=$(GIT_HASH)" geoportal
 	touch $@
 
 .PHONY: push-docker
@@ -732,7 +712,7 @@ push-docker:
 
 alembic.yaml: vars_testdb.yaml vars.yaml CONST_vars.yaml
 	$(PRERULE_CMD)
-	c2c-template --vars $< --get-config /build/_alembic.yaml srid schema schema_static sqlalchemy.url
+	c2c-template --vars $< --get-config /build/_alembic.yaml srid schema schema_static sqlalchemy.url cache
 	mv /build/_alembic.yaml $@
 
 testdb/11-schemas.sql: vars_testdb.yaml testdb/11-schemas.sql_mako vars.yaml CONST_vars.yaml
@@ -771,5 +751,12 @@ upgrade%: project.yaml
 	c2cupgrade $(UPGRADE_ARGS) --step $*
 
 # Tilecloud chain
+mapcache/mapcache.xml: tilegeneration/config.yaml
+	$(PRERULE_CMD)
+	mkdir --parent $(dir $@)
+	generate_controller --mapcache
+
 $(WMTSCAPABILITIES_FILE): tilegeneration/config.yaml
+	$(PRERULE_CMD)
+	mkdir --parent $(dir $@)
 	generate_controller --capabilities
