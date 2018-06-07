@@ -409,7 +409,7 @@ vars:
 
   # Checker configuration
   checker:
-    fulltextsearch: 
+    fulltextsearch:
       search: pau
     print:
       spec:
