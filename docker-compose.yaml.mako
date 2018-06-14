@@ -27,8 +27,8 @@ ${service_defaults('mapserver', 80)}\
 
   qgisserver:
     image: camptocamp/qgis-server:latest
-    volumes_from:
-      - config:ro
+    volumes:
+      - qgis-project:/project:ro
 ${service_defaults('qgisserver', 80)}
 
   mapcache:
@@ -76,6 +76,17 @@ ${service_defaults('geoportal', 80)}\
       - head
 ${service_defaults('geoportal')}\
 
+  sftp:
+    image: atmoz/sftp:debian-stretch
+    volumes_from:
+      - config:ro
+    volumes:
+      - qgis-project:/home/sigdev/project:rw
+    ports:
+      - '2222:22'
+    entrypoint:
+      - /etc/sftp/init
+
   front:
     image: haproxy:1.8
     volumes_from:
@@ -102,3 +113,6 @@ networks:
     external:
       name: global_default
 %endif
+
+volumes:
+  qgis-project:

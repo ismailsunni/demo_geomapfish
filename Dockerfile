@@ -27,4 +27,9 @@ VOLUME /usr/local/tomcat/webapps/ROOT/print-apps
 COPY front /etc/haproxy
 VOLUME /etc/haproxy
 
+COPY sftp/conf /etc/sftp
+VOLUME /etc/sftp
+COPY sftp/keys /home/sigdev/.ssh/keys
+VOLUME /home/sigdev/.ssh/keys
+
 ENTRYPOINT [ "/usr/bin/eval-templates" ]

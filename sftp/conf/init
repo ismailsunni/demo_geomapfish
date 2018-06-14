@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+cp /etc/sftp/ssh_host_ed25519_key /etc/ssh/
+cp /etc/sftp/ssh_host_rsa_key /etc/ssh/
+
+chown 1000:1000 /home/sigdev/project
+chmod og+r -R /home/sigdev/project
+
+exec /entrypoint
