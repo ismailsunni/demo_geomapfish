@@ -14,6 +14,8 @@ authtkt_cookie_name = ${authtkt["cookie_name"]}
 authtkt_timeout = ${authtkt["timeout"]}
 % endif
 app.cfg = %(here)s/config.yaml
+# authtkt_http_only = false
+# authtkt_secure = false
 
 tm.annotate_user = false
 
