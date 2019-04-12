@@ -21,7 +21,14 @@ jobs:
   include:
     - stage: config-geoportal
       script:
-        - ./docker-run make docker-build-config
+        - docker run --name python --detach camptocamp/tilecloud-chain:1.9 sleep 9999
+        - docker exec python python3 -m pip install c2c-template
+        - docker cp tilegeneration/config.yaml.tmpl python:/tmp
+        - docker exec python mkdir mapcache
+        - docker exec python generate_controller --config=/tmp/config.yaml.tmpl --generate-mapcache-config --mapcache-version=1.6
+        - mkdir mapcache
+        - docker cp python:/etc/tilegeneration/mapcache/mapcache.xml.tmpl mapcache/mapcache.xml.tmpl
+        - docker build --tag=camptocamp/demo-config:latest .
       after_success:
         - ./travis/deploy 2.4 config
     - script:
