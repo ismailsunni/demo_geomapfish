@@ -14,5 +14,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    entry_points={"paste.app_factory": ["main = geomapfish_geoportal:main",], "console_scripts": [],},
+    entry_points={
+        "paste.app_factory": ["main = geomapfish_geoportal:main",],
+        "console_scripts": [],
+        "paste.filter_app_factory": [
+            "c2cprefix = demo_geoportal.resourcesl:make_prefix_middleware"
+        ]
+    },
 )
