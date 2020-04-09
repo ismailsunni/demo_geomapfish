@@ -1,7 +1,7 @@
 GeoMapFish demo project
 =======================
 
-Read the `Documentation <https://camptocamp.github.io/c2cgeoportal/2.5/>`_
+Read the `Documentation <https://camptocamp.github.io/c2cgeoportal>`_
 
 Checkout
 --------
@@ -18,6 +18,11 @@ Build
 
   make secrets
   ./build
+
+
+.. note:: 
+
+  You need to add you GPG key first. Please contact one of this repository contributor.
 
 Run locally
 -----------
